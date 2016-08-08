@@ -292,9 +292,10 @@ func main() {
 				// we only want to list this specific dir
 				continue
 			}
-			var bl_max = BLReadMax(dir)
-			var bl_cur = BLReadCurrent(dir)
-			fmt.Printf("%d\t%s\t%d/%d\n", i, filepath.Base(dir), bl_cur, bl_max)
+			var bl_max  = BLReadMax(dir)
+			var bl_cur  = BLReadCurrent(dir)
+			var bl_perc = 100.0*float64(bl_cur)/float64(bl_max)
+			fmt.Printf("%2d  %25s  %4d  %4d  %6.2f\n", i, filepath.Base(dir), bl_cur, bl_max, bl_perc)
 		}
 		os.Exit(0)
 	}
