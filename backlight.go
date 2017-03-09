@@ -24,6 +24,7 @@ type Options struct {
 	id   int      // select by id
 	name string   // select by name
 	val  float64  // value to update 
+	min  uint     // minimum value
 	perc bool     // val is a percentage
 	rel  bool     // val is relative
 }
@@ -34,6 +35,7 @@ func ParseOptions() Options {
 	var op_id   = flag.Int(   "i",    -1, "select brightness control by id")
 	var op_name = flag.String("n",    "", "select brightness control by name")
 	var op_val  = flag.String("s",    "", "set/adjust brightness (absolute value, relative value or percentage)")
+	var op_min  = flag.Int(   "m",     0, "set minimum brightness (default: 0)")
 
 	flag.Parse()
 
@@ -44,6 +46,7 @@ func ParseOptions() Options {
 	options.id   = *op_id
 	options.name = *op_name
 	options.val  = math.NaN()
+	options.min  = 0
 	options.perc = false
 	options.rel  = false
 
@@ -65,6 +68,10 @@ func ParseOptions() Options {
 		options.val = val
 
 		debug("parsed options; val=%v rel=%v perc=%v\n",options.val,options.rel,options.perc)
+	}
+
+	if (*op_min>0) {
+		options.min = uint(*op_min)
 	}
 
 	// some logic
@@ -250,7 +257,7 @@ func Round(f float64) int {
 	}
 }
 
-func CalcBacklight(bl_max uint, bl_cur uint , val float64, is_rel bool, is_perc bool) uint {
+func CalcBacklight(bl_max uint, bl_min uint, bl_cur uint, val float64, is_rel bool, is_perc bool) uint {
 	var bl = 0.0
 
 	// "calculations"
@@ -267,8 +274,8 @@ func CalcBacklight(bl_max uint, bl_cur uint , val float64, is_rel bool, is_perc 
 	}
 
 	// sanity check 
-	if bl<0 {
-		return 0
+	if bl<0 || uint(bl)<bl_min {
+		return bl_min
 	} else if bl>float64(bl_max) {
 		return bl_max
 	} else {
@@ -307,7 +314,7 @@ func main() {
 		}
 		var bl_max = BLReadMax(selected_dir)
 		var bl_cur = BLReadCurrent(selected_dir)
-		var bl_new = CalcBacklight(bl_max, bl_cur, options.val, options.rel, options.perc)
+		var bl_new = CalcBacklight(bl_max, options.min, bl_cur, options.val, options.rel, options.perc)
 		fmt.Printf("Setting backlight to %v\n",bl_new)
 		BLWriteCurrent(selected_dir, bl_new)
 	}
